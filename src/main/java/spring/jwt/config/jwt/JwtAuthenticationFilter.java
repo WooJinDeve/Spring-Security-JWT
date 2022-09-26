@@ -25,12 +25,12 @@ import java.util.Date;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
+    private final ObjectMapper om;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
 
-        ObjectMapper om = new ObjectMapper();
         LoginRequestDto loginRequestDto = null;
         try {
             loginRequestDto = om.readValue(request.getInputStream(), LoginRequestDto.class);

@@ -1,6 +1,8 @@
 package spring.jwt.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +12,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import spring.jwt.config.jwt.JwtAuthenticationFilter;
+import spring.jwt.config.jwt.JwtAuthorizationFilter;
+import spring.jwt.repository.UserRepository;
 
 
 @Configuration
@@ -18,6 +22,8 @@ import spring.jwt.config.jwt.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final CorsConfig corsConfig;
+    private final ObjectMapper om;
+    private final UserRepository userRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -29,11 +35,11 @@ public class SecurityConfig {
                 .httpBasic().disable()
                 .apply(new MyCustomDsl()) // 커스텀 필터 등록
                 .and()
-                .authorizeRequests(authroize -> authroize.antMatchers("/api/v1/user/**")
+                .authorizeRequests(authroize -> authroize.antMatchers("/api/user/**")
                         .access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
-                        .antMatchers("/api/v1/manager/**")
+                        .antMatchers("/api/manager/**")
                         .access("hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
-                        .antMatchers("/api/v1/admin/**")
+                        .antMatchers("/api/admin/**")
                         .access("hasRole('ROLE_ADMIN')")
                         .anyRequest().permitAll())
                 .build();
@@ -45,7 +51,8 @@ public class SecurityConfig {
             AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
             http
                     .addFilter(corsConfig.corsFilter())
-                    .addFilter(new JwtAuthenticationFilter(authenticationManager));
+                    .addFilter(new JwtAuthenticationFilter(authenticationManager, om))
+                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository));
         }
     }
 }
